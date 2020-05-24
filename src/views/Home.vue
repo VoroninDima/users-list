@@ -4,12 +4,13 @@
       <ArrowButton @click="pageNumber--" :disabled="!pageNumber"/>
       <div class="pagination-controls-select">
         <label for="pageRate" class="pagination-controls-select__label">Пользователей на странице:</label>
-        <select v-model="currentRate" @change="setFirstPage" class="pagination-controls-select__input" name="pageRate" id="pageRate">
+        <select v-model="currentRate" @change="pageNumber = 0" class="pagination-controls-select__input" name="pageRate" id="pageRate">
           <option v-for="rate in pageRates" :value="rate" :key="rate">{{ rate }}</option>
         </select>
       </div>
       <ArrowButton @click="pageNumber++" :disabled="pagesCount === pageNumber + 1" rotated/>
     </div>
+    <input v-model="searchInputValue" @input="pageNumber = 0" class="users-list-wrapper__search" type="text" placeholder="Поиск">
     <ul class="users-list">
       <UsersListItem v-for="item in paginatedData" :user-info="item" :key="item.id"/>
     </ul>
@@ -28,25 +29,27 @@ export default {
     return {
       pageRates: [5, 10, 20],
       pageNumber: 0,
-      currentRate: 5
+      currentRate: 5,
+      searchInputValue: ''
     }
   },
   computed: {
     ...mapState(['usersList']),
+    filteredUsersList () {
+      return this.usersList.filter(user => {
+        const fullName = `${user.first_name} ${user.last_name}`;
+        return fullName.toLocaleLowerCase().includes(this.searchInputValue.toLocaleLowerCase())
+      })
+    },
     paginatedData(){
       const start = this.pageNumber * this.currentRate;
       const end = start + this.currentRate;
 
-      return this.usersList.slice(start, end)
+      return this.filteredUsersList.slice(start, end)
     },
     pagesCount(){
-      const usersLength = this.usersList.length;
+      const usersLength = this.filteredUsersList.length;
       return Math.ceil(usersLength/this.currentRate);
-    }
-  },
-  methods: {
-    setFirstPage () {
-      this.pageNumber = 0
     }
   }
 }
@@ -81,9 +84,14 @@ export default {
     overflow: auto;
   }
 
+  .users-list-wrapper__search {
+    margin: 10px 20px;
+    height: 20px;
+  }
+
   @media only screen and (max-width: 500px) {
     .users-list {
-      height: calc(100vh - 162px);
+      height: calc(100vh - 208px);
     }
   }
 </style>
